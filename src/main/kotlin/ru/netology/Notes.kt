@@ -37,11 +37,10 @@ object Notes {
 
     fun createComment(
         noteId: Int,
-        ownerId: Int = 0,
         replyTo: Int = 0,
         message: String,
     ): Int {
-        if (noteId !in 0..notesList.size) {
+        if (noteId !in 0 until notesList.size) {
             throw NoteNotExistException("Note with $noteId not exist")
         } else {
             if (notesList[noteId].isDeleted) {
@@ -52,7 +51,6 @@ object Notes {
                     Comment(
                         commentId,
                         noteId,
-                        ownerId,
                         System.currentTimeMillis().toInt()+commentId,
                         replyTo,
                         message
@@ -64,7 +62,7 @@ object Notes {
     }
 
     fun delete(noteId: Int) {
-        if (noteId !in 0..notesList.size) {
+        if (noteId !in 0 until notesList.size) {
             throw NoteNotExistException("Note with $noteId not exist")
         } else {
             if (notesList[noteId].isDeleted) {
@@ -82,7 +80,7 @@ object Notes {
     }
 
     fun deleteComment(commentId: Int) {
-        if (commentId !in 0..commentList.size) {
+        if (commentId !in 0 until commentList.size) {
             throw CommentNotExistException("Comment with $commentId not exist")
         } else {
             if (commentList[commentId].isDeleted) {
@@ -103,7 +101,7 @@ object Notes {
         privacyView: String = "all",
         privacyViewComment: String = "all"
     ): Int {
-        if (noteId !in 0..notesList.size) {
+        if (noteId !in 0 until notesList.size) {
             throw NoteNotExistException("Note with $noteId not exist")
         } else {
             if (notesList[noteId].isDeleted) {
@@ -125,34 +123,34 @@ object Notes {
 
     fun editComment(
         commentId: Int,
-        ownerId: Int = 0,
         message: String
     ) {
-        if (commentId !in 0..commentList.size) {
+        if (commentId !in 0 until commentList.size) {
             throw CommentNotExistException("Comment with $commentId not exist")
         } else {
             if (commentList[commentId].isDeleted) {
                 throw CommentDeletedException("Comment with $commentId is deleted")
             } else {
-                val editedComment = commentList[commentId].copy(ownerId = ownerId, message = message)
+                val editedComment = commentList[commentId].copy(message = message)
                 commentList[commentId] = editedComment
             }
         }
     }
 
     fun get(
-        notesIds: String,
+        notesIds: String? = null,
         userId: Int,
-        offset: Int,
+        offset: Int=0,
         count: Int,
-        sort: Int
+        sort: Int = SORT_BY_DATE_ASC
     ): List<Note> {
         var result = mutableListOf<Note>()
-        var idsList = notesIds.split(" ")
+        var idsList = notesIds?.split(" ")
 
         for (i in offset until notesList.size) {
+            if (result.size == count) break
             if (notesList[i].userId == userId) {
-                if (idsList.isEmpty()) { //return all notes is Ids is empty
+                if (idsList == null) { //return all notes is Ids is empty
                     result.add(notesList[i])
                     if (result.size == count) return result
                 } else {
@@ -199,21 +197,20 @@ object Notes {
 
     fun getComments(
         noteId: Int,
-        userId: Int,
-        offset: Int,
+        offset: Int = 0,
         count: Int,
-        sort: Int
+        sort: Int = SORT_BY_DATE_ASC
     ): List<Comment> {
         var result = mutableListOf<Comment>()
-        if (noteId !in 0..notesList.size) {
+        if (noteId !in 0 until notesList.size) {
             throw NoteNotExistException("Note with $noteId not exist")
         } else {
             val note = notesList[noteId]
             if (note.isDeleted) {
                 throw NoteDeletedException("Note with $noteId is deleted")
             } else {
-                for (i in offset..commentList.size) {
-                    if (commentList[i].noteId == noteId && commentList[i].ownerId == userId) {
+                for (i in offset until commentList.size) {
+                    if (commentList[i].noteId == noteId) {
                         result.add(commentList[i])
                         if (result.size == count) break
                     }
@@ -230,7 +227,7 @@ object Notes {
     }
 
     fun restoreComment(commentId: Int) {
-        if (commentId !in 0..commentList.size) {
+        if (commentId !in 0 until commentList.size) {
             throw CommentNotExistException("Comment with $commentId not exist")
         } else {
             if (!commentList[commentId].isDeleted) {
